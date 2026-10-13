@@ -1,6 +1,5 @@
 #!/usr/bin/env bun
 import { Octokit } from "@octokit/rest";
-import * as fs from "node:fs";
 import * as path from "node:path";
 import { parse, stringify } from "smol-toml";
 import { join } from "desm";
@@ -45,11 +44,11 @@ async function updatePackageRevisions(): Promise<void> {
   };
 
   try {
-    if (fs.existsSync(chordpackPath)) {
-      const existingContent = fs.readFileSync(chordpackPath, "utf-8");
+    if (await Bun.file(chordpackPath).exists()) {
+      const existingContent = await Bun.file(chordpackPath).text();
       chordpack = parse(existingContent);
     }
-  } catch (error) {
+  } catch {
     console.warn("Could not parse existing chordpack.toml, proceeding with defaults.");
   }
 
@@ -79,10 +78,10 @@ async function updatePackageRevisions(): Promise<void> {
   }
 
   const output = stringify(chordpack);
-  fs.writeFileSync(chordpackPath, output);
+  await Bun.write(chordpackPath, output);
   let maybe = join(import.meta.url, "../../Chord/data/chordpack.toml");
-  if (fs.existsSync(maybe)) {
-    fs.writeFileSync(maybe, output);
+  if (await Bun.file(maybe).exists()) {
+    await Bun.write(maybe, output);
   }
 
   console.log(`Updated ${chordpackPath}`);
